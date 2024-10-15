@@ -6,6 +6,10 @@ terraform {
       source  = "dmacvicar/libvirt"
       version = "0.8.0"
     }
+    template = {
+        source = "hashicorp/terraform-provider-template"
+        version = "2.2.0"
+    }
   }
 }
 

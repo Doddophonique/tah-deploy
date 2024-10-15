@@ -10,7 +10,6 @@ terraform {
 
 # Define local variables to use within the script
 locals {
-  kube_version = "1.31.1"
   masternodes = 1
   workernodes = 2
   subnet_node_prefix = "172.16.1"

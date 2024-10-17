@@ -26,6 +26,4 @@ jobs:
         env:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: "main"
-          ANSIBLE_DIRECTORY: "."
-          ANSIBLE_CONFIG_FILE: ".ansible-lint.yml"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

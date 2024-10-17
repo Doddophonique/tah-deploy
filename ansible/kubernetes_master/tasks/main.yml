@@ -1,7 +1,7 @@
 ---
 # tasks file for kubernetes_master
 - name: Install required packages
-  apt:
+  ansible.builtin.apt:
     name:
       - curl
       - gnupg2
@@ -9,20 +9,18 @@
       - apt-transport-https
       - ca-certificates
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Install Docker
-  apt:
+  ansible.builtin.apt:
     name: docker.io
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Remove Keyrings Directory (if it exists)
-  ansible.builtin.shell: rm -rf /etc/apt/keyrings
-
+  ansible.builtin.command: rm -rf /etc/apt/keyrings
 - name: Remove Existing Kubernetes Directory (if it exists)
-  ansible.builtin.shell: sudo rm -rf /etc/apt/sources.list.d/pkgs_k8s_io_core_stable_v1_31_deb.list
-
+  ansible.builtin.command: sudo rm -rf /etc/apt/sources.list.d/pkgs_k8s_io_core_stable_v1_31_deb.list
 - name: Disable swap
   ansible.builtin.command:
     cmd: swapoff -a
@@ -109,7 +107,7 @@
     cmd: sudo ufw allow 5473/tcp
 
 - name: Enable the firewall
-  ansible.builtin.ufw:
+  community.general.ufw:
     state: enabled
 
 - name: Reload the firewall
@@ -117,17 +115,17 @@
     cmd: sudo ufw reload
 
 - name: Prepare keyrings directory and update permissions
-  file:
+  ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Download Kubernetes GPG key securely
   ansible.builtin.shell: curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
 - name: Add Kubernetes repository
   ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /"
+    repo: deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /
     state: present
 
 - name: Install kubeadm, kubelet, kubectl
@@ -137,7 +135,7 @@
       - kubeadm
       - kubectl
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Hold kubelet, kubeadm, kubectl packages
   ansible.builtin.command:
@@ -146,7 +144,7 @@
 - name: Replace /etc/default/kubelet contents
   ansible.builtin.copy:
     dest: /etc/default/kubelet
-    content: 'KUBELET_EXTRA_ARGS="--cgroup-driver=cgroupfs"'
+    content: KUBELET_EXTRA_ARGS="--cgroup-driver=cgroupfs"
 
 - name: Reload systemd configuration
   ansible.builtin.command:
@@ -166,7 +164,7 @@
 
 - name: Reboot the system
   ansible.builtin.reboot:
-    msg: "Reboot initiated by Ansible for Kubernetes setup"
+    msg: Reboot initiated by Ansible for Kubernetes setup
     reboot_timeout: 150
 
 - name: Replace Docker daemon.json configuration
@@ -215,22 +213,24 @@
   changed_when: false
 
 - name: Set permissions for Kubernetes Admin
-  file:
+  ansible.builtin.file:
     path: /etc/kubernetes/admin.conf
     state: file
     owner: ansible
-    mode: '0755'
+    mode: "0755"
 
 - name: Generate join command
-  command: kubeadm token create --print-join-command
+  ansible.builtin.command: kubeadm token create --print-join-command
   register: join_command
 
 - name: Copy join command to local file
-  local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="/tmp/join-command"
-
+  ansible.builtin.copy:
+    content: '"{{ join_command.stdout_lines[0] }}"'
+    dest: '"/tmp/join-command"'
+  delegate_to: localhost
 - name: Set permissions for the Join Executable
-  file:
+  ansible.builtin.file:
     path: /tmp/join-command
     state: file
-    mode: '0755'
+    mode: "0755"
   delegate_to: localhost

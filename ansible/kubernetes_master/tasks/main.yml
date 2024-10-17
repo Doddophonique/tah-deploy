@@ -123,9 +123,7 @@
     mode: "0755"
 
 - name: Download Kubernetes GPG key securely
-  ansible.builtin.shell: |
-    set -o pipefail
-    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  ansible.builtin.shell: curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
 - name: Add Kubernetes repository
   ansible.builtin.apt_repository:
@@ -139,7 +137,7 @@
       - kubeadm
       - kubectl
     state: present
-    update_cache: true
+    update_cache: yes
 
 - name: Hold kubelet, kubeadm, kubectl packages
   ansible.builtin.command:
@@ -213,6 +211,8 @@
 - name: Initialize Kubernetes control plane
   ansible.builtin.command:
     cmd: kubeadm init --pod-network-cidr=10.244.0.0/16
+    creates: /tmp/kubeadm_output
+  register: kubeadm_init_output
   become: true
   changed_when: false
 
@@ -223,6 +223,13 @@
     owner: ansible
     mode: "0755"
 
+- name: Store Kubernetes initialization output to file
+  copy:
+    content: "{{ kubeadm_init_output.stdout }}"
+    dest: /tmp/kubeadm_output
+  become: true
+  delegate_to: localhost
+
 - name: Generate join command
   ansible.builtin.command: kubeadm token create --print-join-command
   register: join_command
@@ -232,6 +239,7 @@
     content: '"{{ join_command.stdout_lines[0] }}"'
     dest: '"/tmp/join-command"'
   delegate_to: localhost
+
 - name: Set permissions for the Join Executable
   ansible.builtin.file:
     path: /tmp/join-command

@@ -11,6 +11,10 @@
     state: present
     update_cache: true
 
+- name: Set a hostname
+  ansible.builtin.hostname:
+    name: worker-{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}
+
 - name: Install Docker
   ansible.builtin.apt:
     name: docker.io

@@ -230,14 +230,8 @@
   become: true
   delegate_to: localhost
 
-- name: Generate join command
-  ansible.builtin.command: kubeadm token create --print-join-command
-  register: join_command
-
-- name: Copy join command to local file
-  ansible.builtin.copy:
-    content: '"{{ join_command.stdout_lines[0] }}"'
-    dest: '"/tmp/join-command"'
+- name: Generate the Join Command
+  ansible.builtin.shell: cat /tmp/kubeadm_output | tail -n 2 | sed ':a;N;$!ba;s/\\\n\s*/ /g' > /tmp/join-command
   delegate_to: localhost
 
 - name: Set permissions for the Join Executable

@@ -13,15 +13,15 @@ The `terraform-provider-libvirt` has been chosen over Vagrant to deploy the VMs 
 
 The Terraform script roughly follows these steps:
   1. Deploy 3 VMs (one master and two workers) with:
-    - 2 vCPUs;
-    - 2GB vRAM;
-    - 20GB of disk space;
-    - Ubuntu 24.04 LTS;
-    - An Ansible user.
+     - 2 vCPUs;
+     - 2GB vRAM;
+     - 20GB of disk space;
+     - Ubuntu 24.04 LTS;
+     - An Ansible user.
   2. Call an Ansible Playbook that:
-    1. Configures the master node and installs Kubernetes;
-    2. Configures the network for the Kubernetes cluster;
-    3. Configures the worker nodes and installs Kubernetes.
+     1. Configures the master node and installs Kubernetes;
+     2. Configures the network for the Kubernetes cluster;
+     3. Configures the worker nodes and installs Kubernetes.
   3. Create the `kiratech-test` namespace;
   4. Run the CIS Kubernetes benchmark;
   5. Copy the helm folder to the master node and install helm.

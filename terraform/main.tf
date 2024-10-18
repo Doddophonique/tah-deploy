@@ -186,9 +186,27 @@ resource null_resource create_namespace {
 
       connection {
           host        = libvirt_domain.k8s_masters[0].network_interface[0].addresses[0]
-		  type        = "ssh"
+          type        = "ssh"
           user        = "ansible"
           private_key = data.template_file.private_key.rendered
       } 
+    }
+}
+
+resource null_resource run_benchmark {
+    depends_on = [  
+      null_resource.create_namespace
+ ] 
+    provisioner "remote-exec" {
+        inline = ["curl https://raw.githubusercontent.com/aquasecurity/kube-bench/refs/heads/main/job-master.yaml > job-master.yaml", "kubectl --kubeconfig ~/.kube/config apply -f job-master.yaml", "rm job-master.yaml"]
+        
+        
+        connection {
+            host        = libvirt_domain.k8s_masters[0].network_interface[0].addresses[0]
+	        type        = "ssh"
+            user        = "ansible"
+            private_key = data.template_file.private_key.rendered
+        } 
+        
     }
 }

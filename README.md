@@ -34,4 +34,4 @@ The script currently lacks:
 The CIS Benchamrk is one of (if not the) most popular benchmarks publicly available, and also has a simple way to implement it in a deployment pipeline using the [kube-bench](https://github.com/aquasecurity/kube-bench) implementation.
 
 ## Linting
-The project uses Github Actions as a CI tool, running [super-linter](https://github.com/super-linter/super-linter) on the entire codebase.
+The project uses GitHub Actions as a CI tool, running [super-linter](https://github.com/super-linter/super-linter) on the entire codebase.

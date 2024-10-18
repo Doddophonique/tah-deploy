@@ -170,7 +170,7 @@ resource null_resource run_ansible {
     depends_on = [ 
       libvirt_domain.k8s_masters,
       libvirt_domain.k8s_workers
- ]     
+    ]     
 
     provisioner "local-exec" {
         command = "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -vvv -i ../ansible/inventory.ini ../ansible/k8s.yml -K"
@@ -180,7 +180,7 @@ resource null_resource run_ansible {
 resource null_resource create_namespace {
     depends_on = [ 
       null_resource.run_ansible
- ]
+    ]
     provisioner "remote-exec"  {
       inline = ["sudo mkdir ~/.kube", "sudo cp /etc/kubernetes/admin.conf ~/.kube/", "sudo mv ~/.kube/admin.conf ~/.kube/config", "sudo service kubelet restart", "sudo kubectl --kubeconfig ~/.kube/config create namespace kiratech-test"]
 
@@ -196,7 +196,7 @@ resource null_resource create_namespace {
 resource null_resource run_benchmark {
     depends_on = [  
       null_resource.create_namespace
- ] 
+    ] 
     provisioner "remote-exec" {
         inline = ["curl https://raw.githubusercontent.com/aquasecurity/kube-bench/refs/heads/main/job-master.yaml > job-master.yaml", "kubectl --kubeconfig ~/.kube/config apply -f job-master.yaml", "rm job-master.yaml"]
         
@@ -207,6 +207,33 @@ resource null_resource run_benchmark {
             user        = "ansible"
             private_key = data.template_file.private_key.rendered
         } 
-        
+    }
+}
+
+resource null_resource deploy_helm {
+    depends_on = [
+      null_resource.run_benchmark
+    ]
+    
+    provisioner "local-exec" {
+        command = "scp -i ${path.module}/.local/.ssh/id_rsa -r ../helm ansible@${libvirt_domain.k8s_masters[0].network_interface[0].addresses[0]}:/home/ansible/helm"
+    }
+    # https://helm.sh/docs/intro/install/#from-apt-debianubuntu
+    provisioner "remote-exec" {
+        inline = [
+          "curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null",
+          "sudo apt-get install apt-transport-https --yes",
+          "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main\" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list",
+          "sudo apt-get update",
+          "sudo apt-get install helm"
+        ]
+            
+               
+        connection {
+            host        = libvirt_domain.k8s_masters[0].network_interface[0].addresses[0]
+	        type        = "ssh"
+            user        = "ansible"
+            private_key = data.template_file.private_key.rendered
+        } 
     }
 }

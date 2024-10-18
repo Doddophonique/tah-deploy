@@ -10,6 +10,10 @@ terraform {
         source = "hashicorp/template"
         version = "2.2.0"
     }
+    null = {
+      source = "hashicorp/null"
+      version = "3.2.3"
+    }
   }
 }
 
@@ -47,6 +51,9 @@ resource libvirt_volume ubuntu2404_resized {
   count          = local.masternodes + local.workernodes
 }
 
+data template_file private_key {
+  template = file("${path.module}/.local/.ssh/id_rsa")
+}
 
 data template_file public_key {
   template = file("${path.module}/.local/.ssh/id_rsa.pub")
@@ -157,4 +164,31 @@ resource libvirt_domain k8s_workers {
     listen_type = "address"
     autoport    = true
   }
+}
+
+resource null_resource run_ansible {
+    depends_on = [ 
+      libvirt_domain.k8s_masters,
+      libvirt_domain.k8s_workers
+ ]     
+
+    provisioner "local-exec" {
+        command = "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -vvv -i ../ansible/inventory.ini ../ansible/k8s.yml -K"
+    }
+}
+
+resource null_resource create_namespace {
+    depends_on = [ 
+      null_resource.run_ansible
+ ]
+    provisioner "remote-exec"  {
+      inline = ["sudo mkdir ~/.kube", "sudo cp /etc/kubernetes/admin.conf ~/.kube/", "sudo mv ~/.kube/admin.conf ~/.kube/config", "sudo service kubelet restart", "sudo kubectl --kubeconfig ~/.kube/config create namespace kiratech-test"]
+
+      connection {
+          host        = libvirt_domain.k8s_masters[0].network_interface[0].addresses[0]
+		  type        = "ssh"
+          user        = "ansible"
+          private_key = data.template_file.private_key.rendered
+      } 
+    }
 }

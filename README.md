@@ -27,8 +27,8 @@ The Terraform script roughly follows these steps:
   5. Copy the helm folder to the master node and install helm.
 ### Next steps	
 The script currently lacks:
-  - [] Capability of deploying an Helm application;
-  - [] Usage of Terraform outputs to populate Ansible files;
+  - [ ] Capability of deploying an Helm application;
+  - [ ] Usage of Terraform outputs to populate Ansible files;
 
 ### CIS Kubernetes Benchmark
 The CIS Benchamrk is one of (if not the) most popular benchmarks publicly available, and also has a simple way to implement it in a deployment pipeline using the [kube-bench](https://github.com/aquasecurity/kube-bench) implementation.
